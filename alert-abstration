@@ -1,52 +1,42 @@
 import withReactContent from 'sweetalert2-react-content';
-import Swal, { SweetAlertOptions, SweetAlertResult } from 'sweetalert2';
-import { AppSwalAlerts } from '../../../../../../../components/molecules/cascMolecules/AppSwalAlert';
+import Swal from 'sweetalert2';
+import { AppSwalAlerts } from './AppSwalAlerts';
 
 const MySwal = withReactContent(Swal);
 
 type SwallAlertType = 'success' | 'error' | 'warning' | 'info';
 
-interface SwallAlertOptions extends Partial<SweetAlertOptions> {
-    showCloseButton?: boolean;
-    showCancelButton?: boolean;
-    showConfirmButton?: boolean;
-    allowOutsideClick?: boolean;
-    allowEscapeKey?: boolean;
-}
-
-export function swallAlert(
+export const swallAlert = (
     type: SwallAlertType,
-    title?: string,
-    message?: string,
-    options?: SwallAlertOptions
-): Promise<SweetAlertResult<any>> {
+    title: string = '',
+    message: string = ''
+) => {
     return MySwal.fire({
         html: (
             <AppSwalAlerts
                 swal={MySwal}
                 type={type}
-                title={title ?? ''}
-                text={message ?? ''}
+                title={title}
+                text={message}
             />
         ),
-        showCloseButton: options?.showCloseButton ?? true,
-        showCancelButton: options?.showCancelButton ?? false,
-        showConfirmButton: options?.showConfirmButton ?? true,
-        allowOutsideClick: options?.allowOutsideClick ?? true,
-        allowEscapeKey: options?.allowEscapeKey ?? true,
-        ...options,
+        showCloseButton: false,
+        showCancelButton: false,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        allowEscapeKey: true,
     });
-}
+};
 
 import { swallAlert } from './swallAlert';
 
 export const alert = {
-    success: (title: string, message?: string, options?: any) =>
-        swallAlert('success', title, message, options),
-    error: (title: string, message?: string, options?: any) =>
-        swallAlert('error', title, message, options),
-    warning: (title: string, message?: string, options?: any) =>
-        swallAlert('warning', title, message, options),
-    info: (title: string, message?: string, options?: any) =>
-        swallAlert('info', title, message, options),
+    success: (title: string, message?: string) =>
+        swallAlert('success', title, message),
+    error: (title: string, message?: string) =>
+        swallAlert('error', title, message),
+    warning: (title: string, message?: string) =>
+        swallAlert('warning', title, message),
+    info: (title: string, message?: string) =>
+        swallAlert('info', title, message),
 };

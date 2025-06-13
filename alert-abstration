@@ -1,0 +1,333 @@
+// ============================================
+// 📁 services/swalService.ts
+// ============================================
+
+import withReactContent from 'sweetalert2-react-content';
+import Swal, { SweetAlertResult } from 'sweetalert2';
+import { AppSwalAlerts } from '../../../../../../../components/molecules/cascMolecules/AppSwalAlert';
+import { TypographyProps } from '@mui/material';
+
+// ===== TIPOS E INTERFACES =====
+
+/**
+ * Tipos de alerta disponíveis
+ */
+export type AlertType = 'success' | 'error' | 'warning' | 'info' | 'confirm';
+
+/**
+ * Configurações básicas para alertas
+ */
+export interface BaseAlertOptions {
+  title: string;
+  text?: string;
+  textVariant?: TypographyProps['variant'];
+  allowOutsideClick?: boolean;
+  allowEscapeKey?: boolean;
+}
+
+/**
+ * Configurações para alertas simples (success, error, warning, info)
+ */
+export interface SimpleAlertOptions extends BaseAlertOptions {
+  type: 'success' | 'error' | 'warning' | 'info';
+}
+
+/**
+ * Configurações para alertas de confirmação
+ */
+export interface ConfirmAlertOptions extends BaseAlertOptions {
+  type: 'confirm';
+  confirmButtonText?: string;
+  cancelButtonText?: string;
+}
+
+/**
+ * União de todos os tipos de alerta
+ */
+export type AlertOptions = SimpleAlertOptions | ConfirmAlertOptions;
+
+// ===== CONFIGURAÇÕES INTERNAS =====
+
+const DEFAULT_CONFIG = {
+  showCloseButton: false,
+  showCancelButton: false,
+  showConfirmButton: false,
+  allowOutsideClick: false,
+  allowEscapeKey: true,
+} as const;
+
+const BUTTON_TEXTS = {
+  confirm: 'Confirmar',
+  cancel: 'Cancelar',
+} as const;
+
+/**
+ * Serviço principal para gerenciar alertas SweetAlert2
+ * Pode ser usado tanto em loaders/actions quanto em componentes
+ */
+class SwalService {
+  private MySwal = withReactContent(Swal);
+
+  /**
+   * Mostra um alerta simples (success, error, warning, info)
+   */
+  async showSimpleAlert(options: SimpleAlertOptions): Promise<SweetAlertResult> {
+    return this.MySwal.fire({
+      ...DEFAULT_CONFIG,
+      html: this.renderAlert(options),
+      allowOutsideClick: options.allowOutsideClick ?? DEFAULT_CONFIG.allowOutsideClick,
+      allowEscapeKey: options.allowEscapeKey ?? DEFAULT_CONFIG.allowEscapeKey,
+    });
+  }
+
+  /**
+   * Mostra um alerta de confirmação
+   */
+  async showConfirmAlert(options: ConfirmAlertOptions): Promise<boolean> {
+    const result = await this.MySwal.fire({
+      ...DEFAULT_CONFIG,
+      showConfirmButton: true,
+      showCancelButton: true,
+      confirmButtonText: options.confirmButtonText ?? BUTTON_TEXTS.confirm,
+      cancelButtonText: options.cancelButtonText ?? BUTTON_TEXTS.cancel,
+      html: this.renderAlert(options),
+      allowOutsideClick: options.allowOutsideClick ?? DEFAULT_CONFIG.allowOutsideClick,
+      allowEscapeKey: options.allowEscapeKey ?? DEFAULT_CONFIG.allowEscapeKey,
+    });
+
+    return result.isConfirmed;
+  }
+
+  /**
+   * Método genérico que decide qual tipo de alerta mostrar
+   */
+  async show(options: AlertOptions): Promise<SweetAlertResult | boolean> {
+    if (options.type === 'confirm') {
+      return this.showConfirmAlert(options);
+    }
+    return this.showSimpleAlert(options);
+  }
+
+  /**
+   * Renderiza o componente do alerta
+   */
+  private renderAlert(options: AlertOptions) {
+    return (
+      <AppSwalAlerts
+        swal={this.MySwal}
+        type={options.type}
+        title={options.title}
+        text={options.text ?? ''}
+        textVariant={options.textVariant}
+      />
+    );
+  }
+}
+
+// Instância singleton para uso global
+export const swalService = new SwalService();
+
+// ============================================
+// 📁 utils/swallAlert.ts
+// ============================================
+
+import { swalService, AlertOptions, BaseAlertOptions } from '../services/swalService';
+
+/**
+ * API principal para alertas
+ * Usado principalmente em loaders/actions
+ */
+export const swallAlert = {
+  /**
+   * Método principal - Mostra qualquer tipo de alerta
+   */
+  show: (options: AlertOptions) => swalService.show(options),
+
+  /**
+   * Alerta de sucesso
+   */
+  success: (title: string, text?: string, extraOptions?: Partial<BaseAlertOptions>) =>
+    swalService.showSimpleAlert({
+      type: 'success',
+      title,
+      text,
+      ...extraOptions,
+    }),
+
+  /**
+   * Alerta de erro
+   */
+  error: (title: string, text?: string, extraOptions?: Partial<BaseAlertOptions>) =>
+    swalService.showSimpleAlert({
+      type: 'error',
+      title,
+      text,
+      ...extraOptions,
+    }),
+
+  /**
+   * Alerta de aviso
+   */
+  warning: (title: string, text?: string, extraOptions?: Partial<BaseAlertOptions>) =>
+    swalService.showSimpleAlert({
+      type: 'warning',
+      title,
+      text,
+      ...extraOptions,
+    }),
+
+  /**
+   * Alerta informativo
+   */
+  info: (title: string, text?: string, extraOptions?: Partial<BaseAlertOptions>) =>
+    swalService.showSimpleAlert({
+      type: 'info',
+      title,
+      text,
+      ...extraOptions,
+    }),
+
+  /**
+   * Alerta de confirmação
+   */
+  confirm: (
+    title: string, 
+    text?: string, 
+    confirmText?: string, 
+    cancelText?: string
+  ) =>
+    swalService.showConfirmAlert({
+      type: 'confirm',
+      title,
+      text,
+      confirmButtonText: confirmText,
+      cancelButtonText: cancelText,
+    }),
+};
+
+/**
+ * API compatível com versão anterior
+ * @deprecated Use swallAlert em vez disso
+ */
+export const alert = {
+  success: swallAlert.success,
+  error: swallAlert.error,
+  warning: swallAlert.warning,
+  info: swallAlert.info,
+};
+
+// ============================================
+// 📁 examples/usageExamples.ts
+// ============================================
+
+import { swallAlert, alert } from '../utils/swallAlert';
+// Se precisar dos tipos: import { AlertOptions } from '../services/swalService';
+
+/**
+ * EXEMPLOS DE USO - Como usar os alertas
+ */
+
+// ========================================
+// 1. MÉTODOS SIMPLES (mais comum)
+// ========================================
+
+export const exemploUsoSimples = () => {
+  // Alerta de sucesso
+  swallAlert.success('Sucesso!', 'Operação realizada com sucesso');
+  
+  // Alerta de erro
+  swallAlert.error('Erro!', 'Algo deu errado');
+  
+  // Alerta de aviso
+  swallAlert.warning('Atenção!', 'Verifique os dados');
+  
+  // Alerta informativo
+  swallAlert.info('Informação', 'Dados atualizados');
+};
+
+// ========================================
+// 2. ALERTAS DE CONFIRMAÇÃO
+// ========================================
+
+export const exemploConfirmacao = async () => {
+  const confirmado = await swallAlert.confirm(
+    'Confirmar exclusão?',
+    'Esta ação não pode ser desfeita',
+    'Sim, excluir',
+    'Cancelar'
+  );
+  
+  if (confirmado) {
+    console.log('Usuário confirmou');
+  }
+};
+
+// ========================================
+// 3. CONFIGURAÇÕES AVANÇADAS
+// ========================================
+
+export const exemploAvancado = () => {
+  // Com configurações extras
+  swallAlert.error(
+    'Erro crítico',
+    'Sistema indisponível',
+    {
+      allowEscapeKey: false,
+      allowOutsideClick: false,
+      textVariant: 'h6'
+    }
+  );
+  
+  // Usando o método show (mais flexível)
+  swallAlert.show({
+    type: 'warning',
+    title: 'Sessão expirando',
+    text: 'Você será desconectado em 5 minutos',
+    allowEscapeKey: false,
+    textVariant: 'body2'
+  });
+};
+
+// ========================================
+// 4. USO EM LOADERS/ACTIONS
+// ========================================
+
+export const exemploLoader = async () => {
+  try {
+    // Simula uma operação
+    const data = await fetch('/api/data');
+    
+    if (!data.ok) {
+      swallAlert.error(
+        'Erro ao carregar dados',
+        'Tente novamente mais tarde'
+      );
+      return null;
+    }
+    
+    return data.json();
+  } catch (error) {
+    swallAlert.error('Erro inesperado', 'Contate o suporte');
+    return null;
+  }
+};
+
+// ========================================
+// 5. MIGRAÇÃO DO SEU CÓDIGO ATUAL
+// ========================================
+
+export const exemploMigracao = () => {
+  // ANTES (seu código atual):
+  // alert.error(`Não foi possível encontrar a OC ${loadingOrderNumber}...`);
+
+  // DEPOIS (novo sistema):
+  const loadingOrderNumber = '12345';
+  
+  swallAlert.error(
+    'OC não encontrada',
+    `Não foi possível encontrar a OC ${loadingOrderNumber}, por favor entre em contato com a logística`
+  );
+  
+  // Ou mantendo compatibilidade:
+  alert.error(`Não foi possível encontrar a OC ${loadingOrderNumber}...`);
+};

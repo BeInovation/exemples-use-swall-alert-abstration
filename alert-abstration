@@ -1,6 +1,6 @@
 import withReactContent from 'sweetalert2-react-content';
 import Swal, { SweetAlertOptions, SweetAlertResult } from 'sweetalert2';
-import { AppSwalAlerts } from './AppSwalAlerts';
+import { AppSwalAlerts } from '../../../../../../../components/molecules/cascMolecules/AppSwalAlert';
 
 const MySwal = withReactContent(Swal);
 
@@ -37,3 +37,16 @@ export function swallAlert(
         ...options,
     });
 }
+
+import { swallAlert } from './swallAlert';
+
+export const alert = {
+    success: (title: string, message?: string, options?: any) =>
+        swallAlert('success', title, message, options),
+    error: (title: string, message?: string, options?: any) =>
+        swallAlert('error', title, message, options),
+    warning: (title: string, message?: string, options?: any) =>
+        swallAlert('warning', title, message, options),
+    info: (title: string, message?: string, options?: any) =>
+        swallAlert('info', title, message, options),
+};

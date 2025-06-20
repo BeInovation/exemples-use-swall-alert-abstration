@@ -18,3 +18,20 @@ const FieldLabel: React.FC<FieldLabelProps> = ({
     </Box>
   );
 };
+
+ sx={{
+          height: '18px',              // ainda menor que o small padrão
+          fontSize: '0.6rem',          // texto menor
+          fontWeight: 400,             // peso normal
+          bgcolor: 'grey.100',         // fundo cinza claro
+          color: 'grey.600',           // texto cinza médio
+          border: '1px solid',
+          borderColor: 'grey.300',     // borda sutil
+          '& .MuiChip-label': {
+            px: 1,                     // padding horizontal menor
+            py: 0,                     // padding vertical zero
+          },
+          '&:hover': {
+            bgcolor: 'grey.200',       // hover mais escuro
+          }
+        }}

@@ -1,42 +1,20 @@
-import withReactContent from 'sweetalert2-react-content';
-import Swal from 'sweetalert2';
-import { AppSwalAlerts } from './AppSwalAlerts';
+interface FieldLabelProps {
+  children: React.ReactNode;
+  required?: boolean;
+  optional?: boolean;
+  optionalProps?: ChipProps; // permite customizar o chip completamente
+}
 
-const MySwal = withReactContent(Swal);
-
-type SwallAlertType = 'success' | 'error' | 'warning' | 'info';
-
-export const swallAlert = (
-    type: SwallAlertType,
-    title: string = '',
-    message: string = ''
-) => {
-    return MySwal.fire({
-        html: (
-            <AppSwalAlerts
-                swal={MySwal}
-                type={type}
-                title={title}
-                text={message}
-            />
-        ),
-        showCloseButton: false,
-        showCancelButton: false,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        allowEscapeKey: true,
-    });
-};
-
-import { swallAlert } from './swallAlert';
-
-export const alert = {
-    success: (title: string, message?: string) =>
-        swallAlert('success', title, message),
-    error: (title: string, message?: string) =>
-        swallAlert('error', title, message),
-    warning: (title: string, message?: string) =>
-        swallAlert('warning', title, message),
-    info: (title: string, message?: string) =>
-        swallAlert('info', title, message),
+const FieldLabel: React.FC<FieldLabelProps> = ({ 
+  children, 
+  required = false,
+  optional = !required,
+  optionalProps = { label: "Opcional", size: "small", color: "default" }
+}) => {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      {children}{required && '*'}
+      {optional && !required && <Chip {...optionalProps} />}
+    </Box>
+  );
 };

@@ -1,37 +1,21 @@
-interface FieldLabelProps {
-  children: React.ReactNode;
-  required?: boolean;
-  optional?: boolean;
-  optionalProps?: ChipProps; // permite customizar o chip completamente
-}
-
-const FieldLabel: React.FC<FieldLabelProps> = ({ 
-  children, 
-  required = false,
-  optional = !required,
-  optionalProps = { label: "Opcional", size: "small", color: "default" }
-}) => {
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      {children}{required && '*'}
-      {optional && !required && <Chip {...optionalProps} />}
-    </Box>
-  );
-};
-
- sx={{
-          height: '18px',              // ainda menor que o small padrão
-          fontSize: '0.6rem',          // texto menor
-          fontWeight: 400,             // peso normal
-          bgcolor: 'grey.100',         // fundo cinza claro
-          color: 'grey.600',           // texto cinza médio
-          border: '1px solid',
-          borderColor: 'grey.300',     // borda sutil
-          '& .MuiChip-label': {
-            px: 1,                     // padding horizontal menor
-            py: 0,                     // padding vertical zero
-          },
-          '&:hover': {
-            bgcolor: 'grey.200',       // hover mais escuro
-          }
-        }}
+label={
+    props.required ? (
+      props.label + '*'
+    ) : (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {props.label}
+        <Chip 
+          label="Opcional" 
+          size="small" 
+          sx={{
+            height: '18px',
+            fontSize: '0.6rem',
+            bgcolor: 'grey.100',
+            color: 'grey.600',
+            border: '1px solid',
+            borderColor: 'grey.300',
+          }}
+        />
+      </Box>
+    )
+  }

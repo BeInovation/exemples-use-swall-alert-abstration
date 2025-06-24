@@ -1,11 +1,26 @@
-import React, { useState, ReactElement, cloneElement } from 'react';
-import {
-  Popover,
-  Paper,
-  Typography,
-  Box,
-  SvgIcon,
-} from '@mui/material';
+export type PopoverPlacement = 'top' | 'bottom' | 'left' | 'right';
+
+export const getAnchorOrigin = (placement: PopoverPlacement) => {
+  const config = {
+    top: { vertical: 'top' as const, horizontal: 'center' as const },
+    bottom: { vertical: 'bottom' as const, horizontal: 'center' as const },
+    left: { vertical: 'center' as const, horizontal: 'left' as const },
+    right: { vertical: 'center' as const, horizontal: 'right' as const },
+  };
+  return config[placement];
+};
+
+export const getTransformOrigin = (placement: PopoverPlacement) => {
+  const config = {
+    top: { vertical: 'bottom' as const, horizontal: 'center' as const },
+    bottom: { vertical: 'top' as const, horizontal: 'center' as const },
+    left: { vertical: 'center' as const, horizontal: 'right' as const },
+    right: { vertical: 'center' as const, horizontal: 'left' as const },
+  };
+  return config[placement];
+};
+
+
 import {
   Info as InfoIcon,
   Warning as WarningIcon,
@@ -14,33 +29,9 @@ import {
   Dangerous as DangerIcon,
 } from '@mui/icons-material';
 
-// ==================== TYPES ====================
 export type PopoverType = 'info' | 'warning' | 'error' | 'success' | 'danger';
-export type PopoverPlacement = 'top' | 'bottom' | 'left' | 'right';
 
-export interface CustomPopoverProps {
-  children: ReactElement;
-  title: string;
-  text: string;
-  type?: PopoverType;
-  placement?: PopoverPlacement;
-  disabled?: boolean;
-}
-
-interface TypeConfiguration {
-  icon: typeof SvgIcon;
-  iconColor: string;
-  backgroundColor: string;
-  borderColor: string;
-}
-
-interface PositionOrigin {
-  vertical: 'top' | 'center' | 'bottom';
-  horizontal: 'left' | 'center' | 'right';
-}
-
-// ==================== TYPE CONFIG ====================
-const typeConfig: Record<PopoverType, TypeConfiguration> = {
+export const typeConfig = {
   info: {
     icon: InfoIcon,
     iconColor: '#2196F3',
@@ -73,52 +64,21 @@ const typeConfig: Record<PopoverType, TypeConfiguration> = {
   },
 };
 
-// ==================== POSITIONING UTILS ====================
-const placementConfig: Record<PopoverPlacement, {
-  anchorOrigin: PositionOrigin;
-  transformOrigin: PositionOrigin;
-}> = {
-  top: {
-    anchorOrigin: { vertical: 'top', horizontal: 'center' },
-    transformOrigin: { vertical: 'bottom', horizontal: 'center' },
-  },
-  bottom: {
-    anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
-    transformOrigin: { vertical: 'top', horizontal: 'center' },
-  },
-  left: {
-    anchorOrigin: { vertical: 'center', horizontal: 'left' },
-    transformOrigin: { vertical: 'center', horizontal: 'right' },
-  },
-  right: {
-    anchorOrigin: { vertical: 'center', horizontal: 'right' },
-    transformOrigin: { vertical: 'center', horizontal: 'left' },
-  },
-};
+import React, { useState, ReactElement, cloneElement } from 'react';
+import { Popover, Paper, Typography, Box } from '@mui/material';
+import { PopoverType, typeConfig } from './typeConfig';
+import { PopoverPlacement, getAnchorOrigin, getTransformOrigin } from './positioning';
 
-// ==================== HELPER FUNCTIONS ====================
-const getTypeConfiguration = (type: PopoverType): TypeConfiguration => {
-  return typeConfig[type];
-};
+interface CustomPopoverProps {
+  children: ReactElement;
+  title: string;
+  text: string;
+  type?: PopoverType;
+  placement?: PopoverPlacement;
+  disabled?: boolean;
+}
 
-const getAnchorOrigin = (placement: PopoverPlacement): PositionOrigin => {
-  return placementConfig[placement].anchorOrigin;
-};
-
-const getTransformOrigin = (placement: PopoverPlacement): PositionOrigin => {
-  return placementConfig[placement].transformOrigin;
-};
-
-const isValidPopoverType = (type: string): type is PopoverType => {
-  return Object.keys(typeConfig).includes(type);
-};
-
-const isValidPlacement = (placement: string): placement is PopoverPlacement => {
-  return Object.keys(placementConfig).includes(placement);
-};
-
-// ==================== MAIN COMPONENT ====================
-export const CustomPopover: React.FC<CustomPopoverProps> = ({
+const CustomPopover: React.FC<CustomPopoverProps> = ({
   children,
   title,
   text,
@@ -129,7 +89,7 @@ export const CustomPopover: React.FC<CustomPopoverProps> = ({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const config = getTypeConfiguration(type);
+  const config = typeConfig[type];
   const IconComponent = config.icon;
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
@@ -144,7 +104,6 @@ export const CustomPopover: React.FC<CustomPopoverProps> = ({
     setAnchorEl(null);
   };
 
-  // Clone o elemento filho e adiciona os event handlers
   const childWithHandlers = cloneElement(children, {
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
@@ -226,14 +185,5 @@ export const CustomPopover: React.FC<CustomPopoverProps> = ({
   );
 };
 
-// ==================== EXPORTS ====================
 export default CustomPopover;
-
-// Exporta as funções helper caso sejam necessárias
-export {
-  getTypeConfiguration,
-  getAnchorOrigin,
-  getTransformOrigin,
-  isValidPopoverType,
-  isValidPlacement,
-};
+export type { PopoverType, PopoverPlacement };

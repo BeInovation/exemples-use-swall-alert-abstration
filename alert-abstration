@@ -1,7 +1,6 @@
 import React, { useState, ReactElement, cloneElement } from 'react';
 import { Popover, Paper, Typography, Box } from '@mui/material';
-import { warningConfig } from './typeConfig';
-import { anchorOrigin, transformOrigin } from './positioning';
+import { Warning as WarningIcon } from '@mui/icons-material';
 
 interface CustomPopoverProps {
   children: ReactElement;
@@ -18,8 +17,6 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-
-  const IconComponent = warningConfig.icon;
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (!disabled) {
@@ -46,8 +43,8 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
         open={isOpen}
         anchorEl={anchorEl}
         onClose={handleMouseLeave}
-        anchorOrigin={anchorOrigin}
-        transformOrigin={transformOrigin}
+        anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'center', horizontal: 'left' }}
         disableRestoreFocus
         sx={{
           pointerEvents: 'none',
@@ -65,8 +62,8 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
           sx={{
             p: 2,
             maxWidth: 320,
-            backgroundColor: warningConfig.backgroundColor,
-            border: `1px solid ${warningConfig.borderColor}`,
+            backgroundColor: '#FFF3E0',
+            border: '1px solid #FFCC80',
             borderRadius: 2,
           }}
         >
@@ -77,9 +74,9 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
               gap: 1.5,
             }}
           >
-            <IconComponent
+            <WarningIcon
               sx={{
-                color: warningConfig.iconColor,
+                color: '#FF9800',
                 fontSize: 24,
                 mt: 0.25,
                 flexShrink: 0,

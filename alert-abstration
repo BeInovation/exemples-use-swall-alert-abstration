@@ -1,21 +1,239 @@
-label={
-    props.required ? (
-      props.label + '*'
-    ) : (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {props.label}
-        <Chip 
-          label="Opcional" 
-          size="small" 
+import React, { useState, ReactElement, cloneElement } from 'react';
+import {
+  Popover,
+  Paper,
+  Typography,
+  Box,
+  SvgIcon,
+} from '@mui/material';
+import {
+  Info as InfoIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  CheckCircle as SuccessIcon,
+  Dangerous as DangerIcon,
+} from '@mui/icons-material';
+
+// ==================== TYPES ====================
+export type PopoverType = 'info' | 'warning' | 'error' | 'success' | 'danger';
+export type PopoverPlacement = 'top' | 'bottom' | 'left' | 'right';
+
+export interface CustomPopoverProps {
+  children: ReactElement;
+  title: string;
+  text: string;
+  type?: PopoverType;
+  placement?: PopoverPlacement;
+  disabled?: boolean;
+}
+
+interface TypeConfiguration {
+  icon: typeof SvgIcon;
+  iconColor: string;
+  backgroundColor: string;
+  borderColor: string;
+}
+
+interface PositionOrigin {
+  vertical: 'top' | 'center' | 'bottom';
+  horizontal: 'left' | 'center' | 'right';
+}
+
+// ==================== TYPE CONFIG ====================
+const typeConfig: Record<PopoverType, TypeConfiguration> = {
+  info: {
+    icon: InfoIcon,
+    iconColor: '#2196F3',
+    backgroundColor: '#E3F2FD',
+    borderColor: '#BBDEFB',
+  },
+  warning: {
+    icon: WarningIcon,
+    iconColor: '#FF9800',
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FFCC80',
+  },
+  error: {
+    icon: ErrorIcon,
+    iconColor: '#F44336',
+    backgroundColor: '#FFEBEE',
+    borderColor: '#FFCDD2',
+  },
+  success: {
+    icon: SuccessIcon,
+    iconColor: '#4CAF50',
+    backgroundColor: '#E8F5E8',
+    borderColor: '#C8E6C9',
+  },
+  danger: {
+    icon: DangerIcon,
+    iconColor: '#D32F2F',
+    backgroundColor: '#FFEBEE',
+    borderColor: '#FFCDD2',
+  },
+};
+
+// ==================== POSITIONING UTILS ====================
+const placementConfig: Record<PopoverPlacement, {
+  anchorOrigin: PositionOrigin;
+  transformOrigin: PositionOrigin;
+}> = {
+  top: {
+    anchorOrigin: { vertical: 'top', horizontal: 'center' },
+    transformOrigin: { vertical: 'bottom', horizontal: 'center' },
+  },
+  bottom: {
+    anchorOrigin: { vertical: 'bottom', horizontal: 'center' },
+    transformOrigin: { vertical: 'top', horizontal: 'center' },
+  },
+  left: {
+    anchorOrigin: { vertical: 'center', horizontal: 'left' },
+    transformOrigin: { vertical: 'center', horizontal: 'right' },
+  },
+  right: {
+    anchorOrigin: { vertical: 'center', horizontal: 'right' },
+    transformOrigin: { vertical: 'center', horizontal: 'left' },
+  },
+};
+
+// ==================== HELPER FUNCTIONS ====================
+const getTypeConfiguration = (type: PopoverType): TypeConfiguration => {
+  return typeConfig[type];
+};
+
+const getAnchorOrigin = (placement: PopoverPlacement): PositionOrigin => {
+  return placementConfig[placement].anchorOrigin;
+};
+
+const getTransformOrigin = (placement: PopoverPlacement): PositionOrigin => {
+  return placementConfig[placement].transformOrigin;
+};
+
+const isValidPopoverType = (type: string): type is PopoverType => {
+  return Object.keys(typeConfig).includes(type);
+};
+
+const isValidPlacement = (placement: string): placement is PopoverPlacement => {
+  return Object.keys(placementConfig).includes(placement);
+};
+
+// ==================== MAIN COMPONENT ====================
+export const CustomPopover: React.FC<CustomPopoverProps> = ({
+  children,
+  title,
+  text,
+  type = 'info',
+  placement = 'top',
+  disabled = false,
+}) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const config = getTypeConfiguration(type);
+  const IconComponent = config.icon;
+
+  const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
+    if (!disabled) {
+      setAnchorEl(event.currentTarget);
+      setIsOpen(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsOpen(false);
+    setAnchorEl(null);
+  };
+
+  // Clone o elemento filho e adiciona os event handlers
+  const childWithHandlers = cloneElement(children, {
+    onMouseEnter: handleMouseEnter,
+    onMouseLeave: handleMouseLeave,
+    ...children.props,
+  });
+
+  return (
+    <>
+      {childWithHandlers}
+      <Popover
+        open={isOpen}
+        anchorEl={anchorEl}
+        onClose={handleMouseLeave}
+        anchorOrigin={getAnchorOrigin(placement)}
+        transformOrigin={getTransformOrigin(placement)}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: 'none',
+          '& .MuiPopover-paper': {
+            pointerEvents: 'auto',
+          },
+        }}
+        PaperProps={{
+          onMouseEnter: () => setIsOpen(true),
+          onMouseLeave: handleMouseLeave,
+        }}
+      >
+        <Paper
+          elevation={3}
           sx={{
-            height: '18px',
-            fontSize: '0.6rem',
-            bgcolor: 'grey.100',
-            color: 'grey.600',
-            border: '1px solid',
-            borderColor: 'grey.300',
+            p: 2,
+            maxWidth: 320,
+            backgroundColor: config.backgroundColor,
+            border: `1px solid ${config.borderColor}`,
+            borderRadius: 2,
           }}
-        />
-      </Box>
-    )
-  }
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1.5,
+            }}
+          >
+            <IconComponent
+              sx={{
+                color: config.iconColor,
+                fontSize: 24,
+                mt: 0.25,
+                flexShrink: 0,
+              }}
+            />
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  mb: 0.5,
+                  lineHeight: 1.3,
+                }}
+              >
+                {title}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  lineHeight: 1.4,
+                }}
+              >
+                {text}
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      </Popover>
+    </>
+  );
+};
+
+// ==================== EXPORTS ====================
+export default CustomPopover;
+
+// Exporta as funções helper caso sejam necessárias
+export {
+  getTypeConfiguration,
+  getAnchorOrigin,
+  getTransformOrigin,
+  isValidPopoverType,
+  isValidPlacement,
+};

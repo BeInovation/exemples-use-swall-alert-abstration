@@ -1,11 +1,17 @@
-import React, { useState, ReactElement, cloneElement } from 'react';
+import React, { useState, ReactElement } from 'react';
 import { Popover, Paper, Typography, Box } from '@mui/material';
-import { Warning as WarningIcon } from '@mui/icons-material';
+import { Warning as WarningIcon, Error as ErrorIcon } from '@mui/icons-material';
+
+type PopoverType = 'warning' | 'error';
+type PopoverPlacement = 'top' | 'bottom' | 'left' | 'right';
 
 interface CustomPopoverProps {
   children: ReactElement;
   title: string;
   text: string;
+  type?: PopoverType;
+  placement?: PopoverPlacement;
+  fullwidth?: boolean;
   disabled?: boolean;
 }
 
@@ -13,10 +19,53 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
   children,
   title,
   text,
+  type = 'warning',
+  placement = 'right',
+  fullwidth = false,
   disabled = false,
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Configuração para cada tipo
+  const typeConfig = {
+    warning: {
+      icon: WarningIcon,
+      iconColor: '#FF9800',
+      backgroundColor: '#FFF3E0',
+      borderColor: '#FFCC80',
+    },
+    error: {
+      icon: ErrorIcon,
+      iconColor: '#F44336',
+      backgroundColor: '#FFEBEE',
+      borderColor: '#FFCDD2',
+    },
+  };
+
+  // Configuração de posicionamento
+  const placementConfig = {
+    top: {
+      anchorOrigin: { vertical: 'top' as const, horizontal: 'center' as const },
+      transformOrigin: { vertical: 'bottom' as const, horizontal: 'center' as const },
+    },
+    bottom: {
+      anchorOrigin: { vertical: 'bottom' as const, horizontal: 'center' as const },
+      transformOrigin: { vertical: 'top' as const, horizontal: 'center' as const },
+    },
+    left: {
+      anchorOrigin: { vertical: 'center' as const, horizontal: 'left' as const },
+      transformOrigin: { vertical: 'center' as const, horizontal: 'right' as const },
+    },
+    right: {
+      anchorOrigin: { vertical: 'center' as const, horizontal: 'right' as const },
+      transformOrigin: { vertical: 'center' as const, horizontal: 'left' as const },
+    },
+  };
+
+  const config = typeConfig[type];
+  const positioning = placementConfig[placement];
+  const IconComponent = config.icon;
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (!disabled) {
@@ -30,21 +79,22 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
     setAnchorEl(null);
   };
 
-  const childWithHandlers = cloneElement(children, {
-    onMouseEnter: handleMouseEnter,
-    onMouseLeave: handleMouseLeave,
-    ...(children.props || {}),
-  });
-
   return (
     <>
-      {childWithHandlers}
+      <Box
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        sx={{ display: 'inline-block', cursor: 'help' }}
+      >
+        {children}
+      </Box>
+      
       <Popover
         open={isOpen}
         anchorEl={anchorEl}
         onClose={handleMouseLeave}
-        anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'center', horizontal: 'left' }}
+        anchorOrigin={positioning.anchorOrigin}
+        transformOrigin={positioning.transformOrigin}
         disableRestoreFocus
         sx={{
           pointerEvents: 'none',
@@ -61,9 +111,12 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
           elevation={3}
           sx={{
             p: 2,
-            maxWidth: 320,
-            backgroundColor: '#FFF3E0',
-            border: '1px solid #FFCC80',
+            ...(fullwidth 
+              ? { maxWidth: 500, minWidth: 350 } 
+              : { maxWidth: 320 }
+            ),
+            backgroundColor: config.backgroundColor,
+            border: `1px solid ${config.borderColor}`,
             borderRadius: 2,
           }}
         >
@@ -74,9 +127,9 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
               gap: 1.5,
             }}
           >
-            <WarningIcon
+            <IconComponent
               sx={{
-                color: '#FF9800',
+                color: config.iconColor,
                 fontSize: 24,
                 mt: 0.25,
                 flexShrink: 0,
@@ -112,3 +165,4 @@ const CustomPopover: React.FC<CustomPopoverProps> = ({
 };
 
 export default CustomPopover;
+export type { PopoverType, PopoverPlacement };

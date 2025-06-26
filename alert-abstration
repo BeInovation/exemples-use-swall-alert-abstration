@@ -1,149 +1,45 @@
-import { Theme } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
+// Cole este código no seu arquivo:
 
-interface StyleProps {
-  size: 'small' | 'large';
-}
-
-// Mapeamento de tamanhos - fácil de manter e expandir
-const sizeMap = {
-  small: 320,
-  large: 520,
-} as const;
-
-export const useStyles = makeStyles<StyleProps>()((theme: Theme, { size }) => {
-  return {
-    popoverRoot: {
-      pointerEvents: 'none',
-      '& .MuiPopover-paper': {
-        pointerEvents: 'auto',
-      },
-    },
-    paper: {
-      padding: theme.spacing(2),
-      maxWidth: sizeMap[size],
-    },
-    backgroundPaperWarning: {
-      backgroundColor: theme.palette.yellow.yellow10,
-    },
-    backgroundPaperError: {
-      backgroundColor: theme.palette.red.red10,
-    },
-    contentBox: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: theme.spacing(1.5),
-    },
-    textBox: {
-      flex: 1,
-    },
-  };
-});
-
-import React, { useState, ReactElement } from 'react';
-import { Popover, Paper, Box, Icon } from '@mui/material';
-import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
-import { useStyles } from './style';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import { placementConfig } from './placementConfig';
-
-interface AppPopoverProps {
-  children: ReactElement;
-  type: 'error' | 'warning';
-  title: string;
-  text: string;
-  disabled: boolean;
-  placement: 'top' | 'bottom' | 'left' | 'right';
-  size?: 'small' | 'large'; // Nova prop adicionada
-}
-
-export const AppPopover = ({
-  children,
-  type,
-  title,
-  text,
-  disabled = false,
-  placement,
-  size = 'large', // Valor padrão
-}: AppPopoverProps) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const positioning = placementConfig[placement];
-
-  const { classes } = useStyles({ size }); // Passando size para useStyles
-
-  const renderIconByType = (type: AppPopoverProps['type']) => {
-    switch (type) {
-      case 'warning':
-        return (
-          <Icon component="div" className="iconSuccess">
-            <ErrorRoundedIcon color="warning" />
-          </Icon>
-        );
-      case 'error':
-        return (
-          <Icon component="div" className="iconError">
-            <CancelRoundedIcon color="error" />
-          </Icon>
-        );
-      default:
-        break;
-    }
-  };
-
-  const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
-    if (!disabled) {
-      setAnchorEl(event.currentTarget);
-      setIsOpen(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsOpen(false);
-    setAnchorEl(null);
-  };
-
-  return (
-    <>
-      <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-        {children}
-      </Box>
-      {anchorEl && (
-        <Popover
-          open={isOpen}
-          anchorEl={anchorEl}
-          onClose={handleMouseLeave}
-          anchorOrigin={positioning.anchorOrigin}
-          transformOrigin={positioning.transformOrigin}
-          disableRestoreFocus
-          slotProps={{
-            paper: {
-              onMouseEnter: () => setIsOpen(true),
-              onMouseLeave: handleMouseLeave,
-            },
-          }}
-          className={classes.popoverRoot}
-        >
-          <Paper
-            elevation={3}
-            className={`${classes.paper} ${
-              type === 'warning'
-                ? classes.backgroundPaperWarning
-                : type === 'error'
-                ? classes.backgroundPaperError
-                : ''
-            }`}
-          >
-            <Box className={classes.contentBox}>
-              {renderIconByType(type)}
-              <Box className={classes.textBox}>
-                <Typography variant="h6">{title}</Typography>
-                <Typography variant="body2">{text}</Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Popover>
-      )}
-    </>
-  );
+const popoverConfigs = {
+  canceled: {
+    type: 'error' as const,
+    title: 'OC Cancelada',
+    text: 'TN incorreta'
+  },
+  
+  pendingDocs: {
+    type: 'warning' as const,
+    title: 'OC com pendência de documentos',
+    getDynamicText: (status: any) => status?.cancellation_reason || 'Motivo não informado'
+  }
 };
+
+renderCell: ({ value: status }) => {
+  const statusChip = <AppStatusChip label={status?.label} status={status?.value} />;
+  
+  let config = null;
+  let popoverText = '';
+  
+  if (status === 'is_canceled') {
+    config = popoverConfigs.canceled;
+    popoverText = config.text;
+  } else if (!status?.is_entry_documents_approved) {
+    config = popoverConfigs.pendingDocs;
+    popoverText = config.getDynamicText(status);
+  }
+  
+  if (!config) return statusChip;
+  
+  return (
+    <AppPopover
+      type={config.type}
+      placement="right"
+      size="large"
+      title={config.title}
+      text={popoverText}
+      disabled={false}
+    >
+      {statusChip}
+    </AppPopover>
+  );
+}

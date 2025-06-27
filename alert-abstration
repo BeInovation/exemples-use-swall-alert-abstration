@@ -1,47 +1,63 @@
-// components/StatusColumn.tsx
-import React from 'react';
-import { AppPopover } from './AppPopover';
-import { shouldShowPopover, getPopoverType, getPopoverContent } from '../utils/popoverHelpers';
+// utils/popoverHelpers.ts
 
-interface StatusColumnProps {
-  status: string;
-  children: React.ReactNode;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
-  size?: 'small' | 'large';
-  title?: string; // Prop opcional para customizar título
-  text?: string;  // Prop opcional para customizar texto
+// Types para melhor tipagem
+interface LoadingOrder {
+  current_status: string;
+  reason?: string | string[];
+  // outras propriedades do loadingOrder
 }
 
-export const StatusColumn: React.FC<StatusColumnProps> = ({ 
-  status, 
-  children, 
-  placement = 'top',
-  size = 'small',
-  title, // Props customizáveis
-  text   // Props customizáveis
-}) => {
-  const showPopover = shouldShowPopover(status);
+export const shouldShowPopover = (loadingOrder: LoadingOrder): boolean => {
+  const status = loadingOrder.current_status;
+  return status === 'is_canceled' || status === 'is_reject';
+};
+
+export const getPopoverType = (loadingOrder: LoadingOrder): 'error' | 'warning' => {
+  const status = loadingOrder.current_status;
+  return status === 'is_canceled' ? 'error' : 'warning';
+};
+
+export const getPopoverTitle = (loadingOrder: LoadingOrder): string => {
+  const status = loadingOrder.current_status;
   
-  if (!showPopover) {
-    return <>{children}</>;
+  const titleMap = {
+    is_canceled: 'OC Cancelada',
+    is_reject: 'OC com Pendência de Documentos'
+  };
+  
+  return titleMap[status as keyof typeof titleMap] || 'Status da OC';
+};
+
+export const getPopoverText = (loadingOrder: LoadingOrder): string => {
+  const reasons = loadingOrder.reason;
+  
+  // Se não há reasons, retorna mensagem padrão
+  if (!reasons) {
+    return 'Nenhum motivo especificado.';
   }
   
-  const popoverType = getPopoverType(status);
-  const defaultContent = getPopoverContent(status);
+  // Se reason é string, retorna direto
+  if (typeof reasons === 'string') {
+    return reasons;
+  }
   
-  // Usa props customizadas ou fallback para o padrão
-  const finalTitle = title || defaultContent?.title;
-  const finalText = text || defaultContent?.text;
+  // Se reason é array, concatena com quebras de linha ou separadores
+  if (Array.isArray(reasons)) {
+    return reasons
+      .filter(reason => reason && reason.trim()) // Remove vazios
+      .map((reason, index) => `${index + 1}. ${reason}`) // Numera os itens
+      .join('\n'); // Junta com quebra de linha
+  }
   
-  return (
-    <AppPopover
-      type={popoverType}
-      title={finalTitle}
-      text={finalText}
-      placement={placement}
-      size={size}
-    >
-      {children}
-    </AppPopover>
-  );
+  return 'Motivo não disponível.';
+};
+
+// Função helper para extrair todos os dados de uma vez
+export const getPopoverData = (loadingOrder: LoadingOrder) => {
+  return {
+    shouldShow: shouldShowPopover(loadingOrder),
+    type: getPopoverType(loadingOrder),
+    title: getPopoverTitle(loadingOrder),
+    text: getPopoverText(loadingOrder)
+  };
 };

@@ -1,45 +1,78 @@
-// Cole este código no seu arquivo:
+// components/StatusColumn.tsx
+import React from 'react';
+import { AppPopover } from './AppPopover';
+import { shouldShowPopover, getPopoverType, getPopoverContent } from '../utils/popoverHelpers';
 
-const popoverConfigs = {
-  canceled: {
-    type: 'error' as const,
-    title: 'OC Cancelada',
-    text: 'TN incorreta'
-  },
-  
-  pendingDocs: {
-    type: 'warning' as const,
-    title: 'OC com pendência de documentos',
-    getDynamicText: (status: any) => status?.cancellation_reason || 'Motivo não informado'
-  }
-};
+interface StatusColumnProps {
+  status: string;
+  children: React.ReactNode;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+  size?: 'small' | 'large';
+}
 
-renderCell: ({ value: status }) => {
-  const statusChip = <AppStatusChip label={status?.label} status={status?.value} />;
+export const StatusColumn: React.FC<StatusColumnProps> = ({ 
+  status, 
+  children, 
+  placement = 'top',
+  size = 'small'
+}) => {
+  const showPopover = shouldShowPopover(status);
   
-  let config = null;
-  let popoverText = '';
-  
-  if (status === 'is_canceled') {
-    config = popoverConfigs.canceled;
-    popoverText = config.text;
-  } else if (!status?.is_entry_documents_approved) {
-    config = popoverConfigs.pendingDocs;
-    popoverText = config.getDynamicText(status);
+  if (!showPopover) {
+    return <>{children}</>;
   }
   
-  if (!config) return statusChip;
+  const popoverType = getPopoverType(status);
+  const popoverContent = getPopoverContent(status);
   
   return (
     <AppPopover
-      type={config.type}
-      placement="right"
-      size="large"
-      title={config.title}
-      text={popoverText}
-      disabled={false}
+      type={popoverType}
+      title={popoverContent?.title}
+      text={popoverContent?.text}
+      placement={placement}
+      size={size}
     >
-      {statusChip}
+      {children}
     </AppPopover>
+  );
+};
+
+// utils/popoverHelpers.ts
+
+export const shouldShowPopover = (status: string): boolean => {
+  return status === 'is_canceled' || status === 'is_reject';
+};
+
+export const getPopoverType = (status: string): 'error' | 'warning' => {
+  return status === 'is_canceled' ? 'error' : 'warning';
+};
+
+export const getPopoverContent = (status: string) => {
+  const contentMap = {
+    is_canceled: {
+      title: 'Cancelado',
+      text: 'Este item foi cancelado e não pode ser processado.'
+    },
+    is_reject: {
+      title: 'Rejeitado',
+      text: 'Este item foi rejeitado e precisa de revisão.'
+    }
+  };
+  
+  return contentMap[status as keyof typeof contentMap];
+};
+
+renderCell: (params: any) => {
+  const status = params.row.status;
+  
+  return (
+    <StatusColumn 
+      status={status} 
+      placement="right"
+      size="small" // ou "large" se precisar de mais info
+    >
+      <StatusChip status={status} />
+    </StatusColumn>
   );
 }

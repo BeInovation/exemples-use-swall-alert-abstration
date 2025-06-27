@@ -8,13 +8,17 @@ interface StatusColumnProps {
   children: React.ReactNode;
   placement?: 'top' | 'bottom' | 'left' | 'right';
   size?: 'small' | 'large';
+  title?: string; // Prop opcional para customizar título
+  text?: string;  // Prop opcional para customizar texto
 }
 
 export const StatusColumn: React.FC<StatusColumnProps> = ({ 
   status, 
   children, 
   placement = 'top',
-  size = 'small'
+  size = 'small',
+  title, // Props customizáveis
+  text   // Props customizáveis
 }) => {
   const showPopover = shouldShowPopover(status);
   
@@ -23,13 +27,17 @@ export const StatusColumn: React.FC<StatusColumnProps> = ({
   }
   
   const popoverType = getPopoverType(status);
-  const popoverContent = getPopoverContent(status);
+  const defaultContent = getPopoverContent(status);
+  
+  // Usa props customizadas ou fallback para o padrão
+  const finalTitle = title || defaultContent?.title;
+  const finalText = text || defaultContent?.text;
   
   return (
     <AppPopover
       type={popoverType}
-      title={popoverContent?.title}
-      text={popoverContent?.text}
+      title={finalTitle}
+      text={finalText}
       placement={placement}
       size={size}
     >
@@ -37,42 +45,3 @@ export const StatusColumn: React.FC<StatusColumnProps> = ({
     </AppPopover>
   );
 };
-
-// utils/popoverHelpers.ts
-
-export const shouldShowPopover = (status: string): boolean => {
-  return status === 'is_canceled' || status === 'is_reject';
-};
-
-export const getPopoverType = (status: string): 'error' | 'warning' => {
-  return status === 'is_canceled' ? 'error' : 'warning';
-};
-
-export const getPopoverContent = (status: string) => {
-  const contentMap = {
-    is_canceled: {
-      title: 'Cancelado',
-      text: 'Este item foi cancelado e não pode ser processado.'
-    },
-    is_reject: {
-      title: 'Rejeitado',
-      text: 'Este item foi rejeitado e precisa de revisão.'
-    }
-  };
-  
-  return contentMap[status as keyof typeof contentMap];
-};
-
-renderCell: (params: any) => {
-  const status = params.row.status;
-  
-  return (
-    <StatusColumn 
-      status={status} 
-      placement="right"
-      size="small" // ou "large" se precisar de mais info
-    >
-      <StatusChip status={status} />
-    </StatusColumn>
-  );
-}

@@ -1,31 +1,3 @@
-// utils/popoverHelpers.ts
-import { LoadingOrderStatus } from '../models/LoadingOrderStatusEnum';
-import { LoadingOrderModel } from '../models/LoadingOrderModel';
-
-export const shouldShowPopover = (loadingOrder: LoadingOrderModel): boolean => {
-  const status = loadingOrder.current_status.value;
-  return status === LoadingOrderStatus.Canceled || status === LoadingOrderStatus.EntryDocsRejected;
-};
-
-export const getPopoverType = (loadingOrder: LoadingOrderModel): 'error' | 'warning' => {
-  const status = loadingOrder.current_status.value;
-  return status === LoadingOrderStatus.Canceled ? 'error' : 'warning';
-};
-
-export const getPopoverTitle = (loadingOrder: LoadingOrderModel): string => {
-  const status = loadingOrder.current_status.value;
-  
-  if (status === LoadingOrderStatus.Canceled) {
-    return 'OC Cancelada';
-  }
-  
-  if (status === LoadingOrderStatus.EntryDocsRejected) {
-    return 'OC com Pendência de Documentos';
-  }
-  
-  return 'Status da OC';
-};
-
 export const getPopoverText = (loadingOrder: LoadingOrderModel): string => {
   // Se não há entry_document_inputs_new ou exit_document_inputs_new, retorna mensagem padrão
   const entryDocs = loadingOrder.entry_document_inputs_new || [];
@@ -34,73 +6,23 @@ export const getPopoverText = (loadingOrder: LoadingOrderModel): string => {
   // Combina todos os documentos
   const allDocs = [...entryDocs, ...exitDocs];
   
-  // Extrai todas as reasons dos documentos que têm reason
+  // Extrai todas as reasons usando operador ternário + flatMap
   const reasons = allDocs
-    .filter(doc => doc.reason && doc.reason.trim()) // Filtra docs com reason válida
-    .map(doc => doc.reason.trim()); // Pega só as reasons
+    .flatMap(doc => {
+      const reason = doc.value?.status?.reason;
+      return (reason && reason.trim()) ? [reason.trim()] : [];
+    });
   
-  // Se não há reasons, retorna mensagem padrão
-  if (reasons.length === 0) {
-    return 'Nenhum motivo especificado.';
-  }
-  
-  // Se há apenas uma reason, retorna direto
-  if (reasons.length === 1) {
-    return reasons[0];
-  }
-  
-  // Se há múltiplas reasons, numera e concatena
-  return reasons
-    .map((reason, index) => `${index + 1}. ${reason}`)
-    .join('\n');
+  // Toda a lógica com operador ternário aninhado
+  return reasons.length === 0 
+    ? 'Nenhum motivo especificado.'
+    : reasons.length === 1
+      ? reasons[0]
+      : reasons
+          .map((reason, index) => `${index + 1}. ${reason}`)
+          .join('\n');
 };
 
-// Função helper para extrair todos os dados de uma vez
-export const getPopoverData = (loadingOrder: LoadingOrderModel) => {
-  return {
-    shouldShow: shouldShowPopover(loadingOrder),
-    type: getPopoverType(loadingOrder),
-    title: getPopoverTitle(loadingOrder),
-    text: getPopoverText(loadingOrder)
-  };
-};
-
-// components/StatusColumn.tsx
-import React from 'react';
-import { AppPopover } from './AppPopover';
-import { getPopoverData } from '../utils/popoverHelpers';
-import { LoadingOrderModel } from '../models/LoadingOrderModel';
-
-interface StatusColumnProps {
-  loadingOrder: LoadingOrderModel;
-  children: React.ReactElement;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
-  size?: 'small' | 'large';
-}
-
-export const StatusColumn: React.FC<StatusColumnProps> = ({ 
-  loadingOrder,
-  children, 
-  placement = 'top',
-  size = 'small'
-}) => {
-  // Extrai todos os dados do popover de uma vez
-  const popoverData = getPopoverData(loadingOrder);
-  
-  // Se não deve mostrar popover, retorna children direto
-  if (!popoverData.shouldShow) {
-    return children;
-  }
-  
-  return (
-    <AppPopover
-      type={popoverData.type}
-      title={popoverData.title}
-      text={popoverData.text}
-      placement={placement}
-      size={size}
-    >
-      {children}
-    </AppPopover>
-  );
-};
+return status === LoadingOrderStatus.Canceled 
+  ? 'OC Cancelada' 
+  : 'OC com Pendência de Documentos';
